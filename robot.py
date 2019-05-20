@@ -9,7 +9,7 @@ PORT_B = 0x01
 PORT_C = 0x02
 PORT_D = 0x03
 
-class Robot(Base):
+class Robot():
     """
     A class which handles a LEGO robot. It can connect to a server and receive commands form the server.
 
