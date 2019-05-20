@@ -85,6 +85,7 @@ class Robot(Base):
         self.SERVER_PORT = port
         self.MANUAL = False
         self.RUN = False
+        self.PICKUP = True
         self.brick = nxt.locator.find_one_brick(name ='MyRobot')
         self.brick_name, self.brick_host, self.brick_signal_strength, self.brick_user_flash = self.brick.get_device_info()
         self.left_motor = nxt.Motor(self.brick, PORT_A)
@@ -328,6 +329,22 @@ class Robot(Base):
         self.left_motor.brake()
         self.right_motor.brake()
 
+    def lift_arm(self):
+        """
+        Lifts the robot
+        :return:
+        """
+        self.arm_motor.run(8)
+        for i in range(3):
+            sleep(1)
+        self.arm_motor.brake()
+
+    def lower_arm(self):
+        self.arm_motor.run(-8)
+        for i in range(3):
+            sleep(1)
+        self.arm_motor.brake()
+
     def disconnect(self):
         """
         Closing down the connection between the robot and the server.
@@ -361,25 +378,47 @@ class Robot(Base):
 
         if direction == "goal":
             print("Robot reached it destination!")
+            if self.PICKUP:
+                self.lift_arm()
+            else:
+                self.lower_arm()
             return "done"
 
         elif direction == "forward":
             self.run()
             while self.light_sensor.get_color() < 50:
                 pass
+            self._update_current_position(self.current_direction)
             self.brake()
 
         elif direction == "backward":
             self.back()
             while self.light_sensor.get_color() < 50:
                 pass
+            self._update_current_position(self.current_direction, False)
             self.brake()
 
         elif direction == "right":
+            if self.current_direction == "north":
+                self.current_direction = "east"
+            elif self.current_direction == "south":
+                self.current_direction = "west"
+            elif self.current_direction == "west":
+                self.current_direction = "north"
+            elif self.current_direction == "east":
+                self.current_direction = "south"
             self.left_motor.turn(64, 90)
             self.right_motor.turn(-64, 90)
 
         elif direction == "left":
+            if self.current_direction == "north":
+                self.current_direction = "west"
+            elif self.current_direction == "south":
+                self.current_direction = "east"
+            elif self.current_direction == "west":
+                self.current_direction = "south"
+            elif self.current_direction == "east":
+                self.current_direction = "north"
             self.left_motor.turn(-64, 90)
             self.right_motor.turn(64, 90)
 
@@ -446,7 +485,7 @@ class Robot(Base):
         self.run()
         while (self.current_location_x != X):
             if (self.light_sensor.get_color() > 50) & (cell_update_flag == True):
-                self._update_current_direction(self.current_direction)
+                self._update_current_position(self.current_direction)
                 if (tempeture_check == True) & (tempeture_check_flag == True):
                     tempeture_check_flag = False
                     tempeture = self.temperature_sensor.get_temperature()
@@ -466,7 +505,7 @@ class Robot(Base):
         self.run()
         while self.current_location_y != Y:
             if (self.light_sensor.get_color() > 75) & (cell_update_flag == True):
-                self._update_current_direction(self.current_direction)
+                self._update_current_position(self.current_direction)
                 if (tempeture_check == True) & (tempeture_check_flag == True):
                     tempeture_check_flag = False
                     tempeture = self.temperature_sensor.get_temperature()
@@ -496,19 +535,33 @@ class Robot(Base):
         self.current_location_y = current_location_y
         self.current_direction = current_direction
 
-    def _update_current_direction(self, direction):
-        if (direction == "north"):
-            self.current_location_y += 1
-        elif (direction == "east"):
-            self.current_location_x += 1
-        elif (direction == "south"):
-            self.current_location_y -= 1
-        elif (direction == "west"):
-            self.current_location_x -= 1
-        elif (direction == "center"):
-            {}
+    def _update_current_position(self, direction, forward=True):
+        if forward:
+            if (direction == "north"):
+                self.current_location_y += 1
+            elif (direction == "east"):
+                self.current_location_x += 1
+            elif (direction == "south"):
+                self.current_location_y -= 1
+            elif (direction == "west"):
+                self.current_location_x -= 1
+            elif (direction == "center"):
+                {}
+            else:
+                return 1
         else:
-            return 1
+            if (direction == "north"):
+                self.current_location_y -= 1
+            elif (direction == "east"):
+                self.current_location_x -= 1
+            elif (direction == "south"):
+                self.current_location_y += 1
+            elif (direction == "west"):
+                self.current_location_x += 1
+            elif (direction == "center"):
+                {}
+            else:
+                return 1
 
     @classmethod
     def find_by_id(cls, id):
