@@ -1,6 +1,5 @@
-from model.robot import Robot
+from robot import Robot
 
-def main():
-    robot = Robot()
-    robot.connect()
+robot = Robot()
+robot.connect()
 
