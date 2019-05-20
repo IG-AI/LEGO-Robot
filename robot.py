@@ -1,9 +1,6 @@
-import random
 import socket, pickle, _thread, serial
 from queue import Queue
 from time import sleep
-from db import DB
-from model.base import Base
 
 import nxt
 
@@ -37,15 +34,7 @@ class Robot(Base):
     disconnect(self)
         Disconnects the robot to the server.
     """
-    __tablename__ = 'robot'
-
-    id = DB.Column(DB.Integer, primary_key=True)
-    role = DB.Column(DB.Boolean)
-    current_location_x = DB.Column(DB.Integer)
-    current_location_y = DB.Column(DB.Integer)
-    current_direction = DB.Column(DB.String(20))
-
-    def __init__(self, id, role, current_location_x, current_location_y, current_direction, host='127.0.1.1', port=2526, pos=(1, 1)):
+    def __init__(self, current_location_x=0, current_location_y=0, current_direction="north", host='127.0.1.1', port=2526, pos=(1, 1)):
         """
         Initialize the robot class, with a host and port as optional input.
 
@@ -96,8 +85,6 @@ class Robot(Base):
         self.temperature_sensor = Temperature()
         self.current_location_x = current_location_x
         self.current_location_y = current_location_y
-        self.id = id
-        self.role = role
         self.assign_coordinate(current_location_x, current_location_y, current_direction)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.direction_queue = Queue()
