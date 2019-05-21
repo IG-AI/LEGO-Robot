@@ -1,16 +1,12 @@
-import socket, pickle, _thread, serial
-from queue import Queue
-from time import sleep
-
-from ev3dev2.motor import LargeMotor, MoveSteering, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent
+#!/usr/bin/env python3
+from ev3dev2.motor import MediumMotor, LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, MoveSteering, SpeedPercent, MoveTank
 from ev3dev2.sensor import INPUT_1
 from ev3dev2.sensor.lego import ColorSensor
 from ev3dev2.sound import Sound
 
-PORT_A = 0x00
-PORT_B = 0x01
-PORT_C = 0x02
-PORT_D = 0x03
+import socket, pickle, _thread, serial
+from queue import Queue
+from time import sleep
 
 class Robot():
     """
@@ -79,8 +75,9 @@ class Robot():
         self.RUN = False
         self.PICKUP = True
         self.wheels_motor = MoveSteering(OUTPUT_A, OUTPUT_B)
-        self.arm_motor = LargeMotor(OUTPUT_C)
+        self.arm_motor = MediumMotor(OUTPUT_C)
         self.color_sensor = ColorSensor(INPUT_1)
+        self.color_sensor.mode = "RGB-RAW"
         self.speaker = Sound()
         self.current_location_x = current_location_x
         self.current_location_y = current_location_y
@@ -186,6 +183,7 @@ class Robot():
         while self.RUN:
             self.recv(1)
             self.move()
+            self.sock.sendall(pickle.dumps("done"))
 
         self.recv(1)
 
@@ -250,7 +248,7 @@ class Robot():
         else:
             raise Exception("The direction has to be a string with either west, east, north and south!")
 
-    def run(self, speed=50):
+    def run(self, speed=25):
         """
         Starts the motors, with the speed as the input, as the default 64
 
@@ -265,15 +263,23 @@ class Robot():
             If the input isn't an int, Exception is raised.
         """
         if type(speed) is int:
-                self.wheels_motor.on(SpeedPercent(speed))
-                while self.color_sensor.color() != 'Red':
-                    pass
+                self.wheels_motor.on(steering = 0, speed = speed)
+                while True:
+                    red = self.color_sensor.value(0)
+                    green = self.color_sensor.value(1)
+                    blue = self.color_sensor.value(2)
+                    print('R',red)
+                    print('G',green)
+                    print('B',blue)
+                    if(red > 50 and green in range(0,50) and blue in range(0,50)):
+                        print('RED')
+                        break
                 self.brake()
 
         else:
             raise Exception("The speed has to be an int!")
 
-    def back(self, speed=50):
+    def back(self, speed=25):
         """
         Starts the motors in reverse, with the speed as the input, as the default 64
 
@@ -288,9 +294,17 @@ class Robot():
             If the input isn't an int, Exception is raised.
         """
         if type(speed) is int:
-                self.wheels_motor.on(-SpeedPercent(speed))
-                while self.color_sensor.color() != 'Red':
-                    pass
+                self.wheels_motor.on(steering = 0, speed = -speed)
+                while True:
+                    red = self.color_sensor.value(0)
+                    green = self.color_sensor.value(1)
+                    blue = self.color_sensor.value(2)
+                    print('R',red)
+                    print('G',green)
+                    print('B',blue)
+                    if(red > 50 and green in range(0,50) and blue in range(0,50)):
+                        print('RED')
+                        break
                 self.brake()
 
         else:
@@ -306,10 +320,10 @@ class Robot():
         """
         Lifts the robots arm
         """
-        self.arm_motor.on_for_seconds(SpeedPercent(20), 3)
+        self.arm_motor.on_for_seconds(speed = 5, seconds = 2)
 
     def lower_arm(self):
-        self.arm_motor.on_for_seconds(-SpeedPercent(20), 3)
+        self.arm_motor.on_for_seconds(speed = -5, seconds = 2)
 
     def disconnect(self):
         """
@@ -341,13 +355,12 @@ class Robot():
             print("No directions available!")
             return "not_move"
 
-        if direction == "goal":
+        if direction == "pickup":
             print("Robot reached it destination!")
-            if self.PICKUP:
-                self.lift_arm()
-            else:
-                self.lower_arm()
-            return "done"
+            self.lift_arm()
+        elif direction == "dropoff":
+            print("Robot reached it destination!")
+            self.lower_arm()
 
         elif direction == "forward":
             self.run()
@@ -364,7 +377,7 @@ class Robot():
                 self.current_direction = "north"
             elif self.current_direction == "east":
                 self.current_direction = "south"
-            self.wheels_motor.on_for_rotations(100, SpeedPercent(25), 90)
+            self.wheels_motor.on_for_degrees(steering = 100, speed = 25, degrees = 200)
 
         elif direction == "left":
             if self.current_direction == "north":
@@ -375,7 +388,7 @@ class Robot():
                 self.current_direction = "south"
             elif self.current_direction == "east":
                 self.current_direction = "north"
-            self.wheels_motor.on_for_rotations(-100, SpeedPercent(25), 90)
+            self.wheels_motor.on_for_degrees(steering = -100, speed = 25, degrees = 200)
 
         elif direction == False:
             print("No no path to the goal could be calculated!")
