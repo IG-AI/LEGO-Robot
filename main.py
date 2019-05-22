@@ -6,6 +6,6 @@ from ev3dev2.sound import Sound
 
 import robot
 
-robot = robot.Robot(host="10.10.10.2", port=2223)
+robot = robot.Robot(host="192.168.43.124", port=2526)
 robot.connect()
 

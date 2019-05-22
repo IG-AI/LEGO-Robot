@@ -183,6 +183,7 @@ class Robot():
         while self.RUN:
             self.recv(1)
             self.move()
+
             self.sock.sendall(pickle.dumps("done"))
 
         self.recv(1)
@@ -268,12 +269,10 @@ class Robot():
                     red = self.color_sensor.value(0)
                     green = self.color_sensor.value(1)
                     blue = self.color_sensor.value(2)
-                    print('R',red)
-                    print('G',green)
-                    print('B',blue)
                     if(red > 50 and green in range(0,50) and blue in range(0,50)):
                         print('RED')
                         break
+                sleep(0.5)
                 self.brake()
 
         else:
@@ -299,12 +298,10 @@ class Robot():
                     red = self.color_sensor.value(0)
                     green = self.color_sensor.value(1)
                     blue = self.color_sensor.value(2)
-                    print('R',red)
-                    print('G',green)
-                    print('B',blue)
                     if(red > 50 and green in range(0,50) and blue in range(0,50)):
                         print('RED')
                         break
+                sleep(0.5)
                 self.brake()
 
         else:
@@ -320,10 +317,10 @@ class Robot():
         """
         Lifts the robots arm
         """
-        self.arm_motor.on_for_seconds(speed = 5, seconds = 2)
+        self.arm_motor.on_for_seconds(speed = 5, seconds = 1)
 
     def lower_arm(self):
-        self.arm_motor.on_for_seconds(speed = -5, seconds = 2)
+        self.arm_motor.on_for_seconds(speed = -5, seconds = 1)
 
     def disconnect(self):
         """
